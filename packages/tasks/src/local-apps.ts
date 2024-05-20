@@ -46,6 +46,35 @@ function isGgufModel(model: ModelData) {
 	return model.tags.includes("gguf");
 }
 
+const snippetVllm = (model: ModelData): string[] => {
+	return [
+		`
+## Deploy with docker (need Docker installed) a gated model (first request access in Hugginface's model repo):
+docker run --runtime nvidia --gpus all \
+    --name my_vllm_container \
+    -v ~/.cache/huggingface:/root/.cache/huggingface \
+    --env "HUGGING_FACE_HUB_TOKEN=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" \
+    -p 8000:8000 \
+    --ipc=host \
+    vllm/vllm-openai:latest \
+    --model mistralai/Mistral-7B-Instruct-v0.1
+`,
+		`## Load and run the model
+docker exec -it my_vllm_container bash -c "python -m vllm.entrypoints.openai.api_server --model mistralai/Mistral-7B-Instruct-v0.1 --dtype auto --api-key token-abc123"`,
+	];
+};
+
+const snippetOllama = (model: ModelData): string[] => {
+	return [
+		`
+## Install with one command:
+curl -fsSL https://ollama.com/install.sh | sh
+`,
+		`## Load and run the model
+ollama run phi3`,
+	];
+};
+
 const snippetLlamacpp = (model: ModelData): string[] => {
 	return [
 		`
@@ -75,6 +104,13 @@ LLAMA_CURL=1 make
  * Ping the HF team if we can help with anything!
  */
 export const LOCAL_APPS = {
+	"ollama": {
+		prettyLabel: "Ollama",
+		docsUrl: "https://ollama.com/",
+		mainTask: "text-generation",
+		displayOnModelPage: isGgufModel,
+		snippet: snippetOllama,
+	},
 	"llama.cpp": {
 		prettyLabel: "llama.cpp",
 		docsUrl: "https://github.com/ggerganov/llama.cpp",
@@ -102,6 +138,13 @@ export const LOCAL_APPS = {
 		mainTask: "text-generation",
 		displayOnModelPage: isGgufModel,
 		deeplink: (model) => new URL(`https://backyard.ai/hf/model/${model.id}`),
+	},
+	"vllm": {
+		prettyLabel: "vLLM",
+		docsUrl: "https://docs.vllm.ai",
+		mainTask: "text-generation",
+		displayOnModelPage: isGptqModel && isAwqModel,
+		snippet: snippetVllm,
 	},
 	drawthings: {
 		prettyLabel: "Draw Things",
